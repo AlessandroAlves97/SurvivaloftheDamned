@@ -1,0 +1,494 @@
+[gd_scene load_steps=16 format=3 uid="uid://c8q2x4v9p1k3m"]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player_script"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.38
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_paddle_shaft"]
+albedo_color = Color(0.46, 0.3, 0.16, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_paddle_blade"]
+albedo_color = Color(0.56, 0.38, 0.2, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_paddle_rope"]
+albedo_color = Color(0.72, 0.64, 0.45, 1)
+roughness = 0.95
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_paddle_shaft"]
+material = SubResource("StandardMaterial3D_paddle_shaft")
+top_radius = 0.022
+bottom_radius = 0.026
+height = 1.25
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_paddle_grip"]
+material = SubResource("StandardMaterial3D_paddle_shaft")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.18
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_paddle_rope"]
+material = SubResource("StandardMaterial3D_paddle_rope")
+top_radius = 0.032
+bottom_radius = 0.032
+height = 0.09
+
+[sub_resource type="BoxMesh" id="BoxMesh_paddle_blade_center"]
+material = SubResource("StandardMaterial3D_paddle_blade")
+size = Vector3(0.14, 0.46, 0.028)
+
+[sub_resource type="BoxMesh" id="BoxMesh_paddle_blade_side"]
+material = SubResource("StandardMaterial3D_paddle_blade")
+size = Vector3(0.08, 0.38, 0.022)
+
+[sub_resource type="BoxMesh" id="BoxMesh_paddle_spine"]
+material = SubResource("StandardMaterial3D_paddle_shaft")
+size = Vector3(0.035, 0.32, 0.04)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_preview_valid"]
+transparency = 1
+albedo_color = Color(0.2, 0.95, 0.4, 0.48)
+
+[sub_resource type="BoxMesh" id="BoxMesh_chest_preview"]
+material = SubResource("StandardMaterial3D_preview_valid")
+size = Vector3(0.88, 0.56, 0.58)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.08, 0.12, 0.16, 0.93)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.55, 0.68, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hotbar"]
+bg_color = Color(0.06, 0.09, 0.13, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.45, 0.58, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="Player" type="CharacterBody3D"]
+process_mode = 3
+floor_max_angle = 0.872665
+script = ExtResource("1_player_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="Head" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head"]
+current = true
+fov = 75.0
+near = 0.05
+far = 2000.0
+
+[node name="InteractionRay" type="RayCast3D" parent="Head/Camera3D"]
+target_position = Vector3(0, 0, -3.8)
+collision_mask = 3
+
+[node name="PaddleHolder" type="Node3D" parent="Head/Camera3D"]
+visible = false
+transform = Transform3D(0.939693, 0.116978, -0.321394, 0, 0.939693, 0.34202, 0.34202, -0.321394, 0.883022, 0.38, -0.26, -0.68)
+
+[node name="PaddleRig" type="Node3D" parent="Head/Camera3D/PaddleHolder"]
+transform = Transform3D(0.984808, 0, -0.173648, -0.150384, 0.5, -0.852868, 0.0868241, 0.866025, 0.492404, 0, 0, 0)
+
+[node name="Shaft" type="MeshInstance3D" parent="Head/Camera3D/PaddleHolder/PaddleRig"]
+mesh = SubResource("CylinderMesh_paddle_shaft")
+
+[node name="HandleGrip" type="MeshInstance3D" parent="Head/Camera3D/PaddleHolder/PaddleRig"]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, -0.62, 0)
+mesh = SubResource("CylinderMesh_paddle_grip")
+
+[node name="RopeBinding" type="MeshInstance3D" parent="Head/Camera3D/PaddleHolder/PaddleRig"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.48, 0)
+mesh = SubResource("CylinderMesh_paddle_rope")
+
+[node name="BladeCenter" type="MeshInstance3D" parent="Head/Camera3D/PaddleHolder/PaddleRig"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, 0)
+mesh = SubResource("BoxMesh_paddle_blade_center")
+
+[node name="BladeLeft" type="MeshInstance3D" parent="Head/Camera3D/PaddleHolder/PaddleRig"]
+transform = Transform3D(0.996195, -0.0871557, 0, 0.0871557, 0.996195, 0, 0, 0, 1, -0.095, 0.71, 0.004)
+mesh = SubResource("BoxMesh_paddle_blade_side")
+
+[node name="BladeRight" type="MeshInstance3D" parent="Head/Camera3D/PaddleHolder/PaddleRig"]
+transform = Transform3D(0.996195, 0.0871557, 0, -0.0871557, 0.996195, 0, 0, 0, 1, 0.095, 0.71, -0.004)
+mesh = SubResource("BoxMesh_paddle_blade_side")
+
+[node name="BladeSpine" type="MeshInstance3D" parent="Head/Camera3D/PaddleHolder/PaddleRig"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+mesh = SubResource("BoxMesh_paddle_spine")
+
+[node name="ChestPreview" type="MeshInstance3D" parent="."]
+visible = false
+top_level = true
+mesh = SubResource("BoxMesh_chest_preview")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+process_mode = 3
+
+[node name="UnderwaterOverlay" type="ColorRect" parent="HUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.28, 0.42, 0.38)
+
+[node name="Crosshair" type="ColorRect" parent="HUD"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 2.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0.8)
+
+[node name="InteractionLabel" type="Label" parent="HUD"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = 18.0
+offset_right = 240.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 17
+text = ""
+horizontal_alignment = 1
+
+[node name="FeedbackLabel" type="Label" parent="HUD"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -65.0
+offset_right = 260.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.65, 1, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
+text = ""
+horizontal_alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 14.0
+offset_right = -16.0
+offset_bottom = 96.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ModeLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.98, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 15
+text = "Estado: NA JANGADA"
+
+[node name="StatsLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.95, 0.85, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
+text = "Vida: 100%   |   Oxigênio: 45s/45s   |   Sede: 100%   |   Fome: 100%"
+
+[node name="HotBarPanel" type="PanelContainer" parent="HUD"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -282.0
+offset_top = -84.0
+offset_right = 282.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hotbar")
+
+[node name="Margin" type="MarginContainer" parent="HUD/HotBarPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="SlotsContainer" type="HBoxContainer" parent="HUD/HotBarPanel/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="InventoryMenu" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -210.0
+offset_right = 360.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="HUD/InventoryMenu"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 18
+
+[node name="VBox" type="VBoxContainer" parent="HUD/InventoryMenu/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="Label" parent="HUD/InventoryMenu/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "INVENTÁRIO & BANCADA DE CRAFT"
+horizontal_alignment = 1
+
+[node name="ContentHBox" type="HBoxContainer" parent="HUD/InventoryMenu/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="InventoryCol" type="VBoxContainer" parent="HUD/InventoryMenu/Margin/VBox/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="InvTitle" type="Label" parent="HUD/InventoryMenu/Margin/VBox/ContentHBox/InventoryCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.92, 1, 1)
+theme_override_font_sizes/font_size = 17
+text = "Itens no Inventário (Clique para Equipar na HotBar)"
+
+[node name="ItemsList" type="VBoxContainer" parent="HUD/InventoryMenu/Margin/VBox/ContentHBox/InventoryCol"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="CraftCol" type="VBoxContainer" parent="HUD/InventoryMenu/Margin/VBox/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="CraftTitle" type="Label" parent="HUD/InventoryMenu/Margin/VBox/ContentHBox/CraftCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_font_sizes/font_size = 17
+text = "Receitas de Craft"
+
+[node name="CraftPaddleBtn" type="Button" parent="HUD/InventoryMenu/Margin/VBox/ContentHBox/CraftCol"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Criar Remo de Madeira (4 Madeiras)"
+
+[node name="CraftChestBtn" type="Button" parent="HUD/InventoryMenu/Margin/VBox/ContentHBox/CraftCol"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Criar Baú de Armazenamento (6 Madeiras)"
+
+[node name="CloseInvBtn" type="Button" parent="HUD/InventoryMenu/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Fechar Inventário [Tab / I / Esc]"
+
+[node name="ChestMenu" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -165.0
+offset_right = 210.0
+offset_bottom = 165.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="HUD/ChestMenu"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 18
+
+[node name="VBox" type="VBoxContainer" parent="HUD/ChestMenu/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="HUD/ChestMenu/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Baú de Armazenamento"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="HUD/ChestMenu/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.55, 1)
+text = "Inventário: 0  |  No Baú: 0 / 50"
+horizontal_alignment = 1
+
+[node name="DepositOneBtn" type="Button" parent="HUD/ChestMenu/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Guardar +1 Madeira"
+
+[node name="DepositAllBtn" type="Button" parent="HUD/ChestMenu/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Guardar Toda a Madeira"
+
+[node name="WithdrawOneBtn" type="Button" parent="HUD/ChestMenu/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Retirar +1 Madeira"
+
+[node name="WithdrawAllBtn" type="Button" parent="HUD/ChestMenu/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Retirar Toda a Madeira"
+
+[node name="CloseChestBtn" type="Button" parent="HUD/ChestMenu/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Fechar [Esc]"
+
+[node name="PauseMenu" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -140.0
+offset_right = 190.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="HUD/PauseMenu"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 20
+
+[node name="MainButtons" type="VBoxContainer" parent="HUD/PauseMenu/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="HUD/PauseMenu/Margin/MainButtons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "JOGO PAUSADO"
+horizontal_alignment = 1
+
+[node name="ResumeBtn" type="Button" parent="HUD/PauseMenu/Margin/MainButtons"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Continuar"
+
+[node name="OptionsBtn" type="Button" parent="HUD/PauseMenu/Margin/MainButtons"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Opções"
+
+[node name="QuitBtn" type="Button" parent="HUD/PauseMenu/Margin/MainButtons"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Fechar Jogo"
+
+[node name="OptionsBox" type="VBoxContainer" parent="HUD/PauseMenu/Margin"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="OptTitle" type="Label" parent="HUD/PauseMenu/Margin/OptionsBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "OPÇÕES"
+horizontal_alignment = 1
+
+[node name="SensLabel" type="Label" parent="HUD/PauseMenu/Margin/OptionsBox"]
+layout_mode = 2
+text = "Sensibilidade do Mouse: 100%"
+
+[node name="SensSlider" type="HSlider" parent="HUD/PauseMenu/Margin/OptionsBox"]
+layout_mode = 2
+min_value = 0.0005
+max_value = 0.006
+step = 0.0001
+value = 0.0022
+
+[node name="FovLabel" type="Label" parent="HUD/PauseMenu/Margin/OptionsBox"]
+layout_mode = 2
+text = "Campo de Visão (FOV): 75°"
+
+[node name="FovSlider" type="HSlider" parent="HUD/PauseMenu/Margin/OptionsBox"]
+layout_mode = 2
+min_value = 60.0
+max_value = 105.0
+step = 1.0
+value = 75.0
+
+[node name="BackBtn" type="Button" parent="HUD/PauseMenu/Margin/OptionsBox"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "Voltar"

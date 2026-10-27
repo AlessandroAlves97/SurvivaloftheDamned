@@ -1,0 +1,171 @@
+[gd_scene load_steps=23 format=3 uid="uid://d3x7n5m1q9v8w"]
+
+[ext_resource type="Script" path="res://scripts/world/ocean_environment.gd" id="1_ocean_env"]
+[ext_resource type="Shader" path="res://shaders/ocean.gdshader" id="2_ocean_shader"]
+[ext_resource type="PackedScene" uid="uid://b4m8n6k2w7r1p" path="res://scenes/structures/shipwreck_raft.tscn" id="3_raft_scene"]
+[ext_resource type="PackedScene" uid="uid://c8q2x4v9p1k3m" path="res://scenes/player/player.tscn" id="4_player_scene"]
+[ext_resource type="PackedScene" uid="uid://c6n3w8p2r4k9x" path="res://scenes/items/floating_wood.tscn" id="5_floating_wood"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.18, 0.45, 0.78, 1)
+sky_horizon_color = Color(0.62, 0.78, 0.88, 1)
+ground_bottom_color = Color(0.02, 0.12, 0.22, 1)
+ground_horizon_color = Color(0.55, 0.72, 0.84, 1)
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_main")
+ambient_light_source = 2
+ambient_light_color = Color(0.75, 0.85, 0.95, 1)
+ambient_light_energy = 0.5
+fog_enabled = true
+fog_light_color = Color(0.62, 0.78, 0.88, 1)
+fog_density = 0.0008
+fog_sky_affect = 0.25
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ocean"]
+render_priority = 0
+shader = ExtResource("2_ocean_shader")
+shader_parameter/shallow_color = Color(0.06, 0.38, 0.48, 1)
+shader_parameter/deep_color = Color(0.02, 0.12, 0.22, 1)
+shader_parameter/foam_color = Color(0.75, 0.88, 0.92, 1)
+shader_parameter/wave_height = 0.14
+shader_parameter/wave_speed = 1.1
+shader_parameter/roughness = 0.15
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ocean"]
+material = SubResource("ShaderMaterial_ocean")
+size = Vector2(1200, 1200)
+subdivide_width = 180
+subdivide_depth = 180
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sand"]
+albedo_color = Color(0.58, 0.54, 0.42, 1)
+roughness = 0.95
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_seafloor"]
+material = SubResource("StandardMaterial3D_sand")
+size = Vector2(1200, 1200)
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_seafloor"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rock"]
+albedo_color = Color(0.24, 0.28, 0.3, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_rock1"]
+material = SubResource("StandardMaterial3D_rock")
+top_radius = 3.2
+bottom_radius = 3.8
+height = 22.0
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_rock1"]
+height = 22.0
+radius = 3.6
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_rock2"]
+material = SubResource("StandardMaterial3D_rock")
+top_radius = 2.8
+bottom_radius = 3.5
+height = 18.0
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_rock2"]
+height = 18.0
+radius = 3.3
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_rock3"]
+material = SubResource("StandardMaterial3D_rock")
+top_radius = 4.0
+bottom_radius = 4.8
+height = 15.0
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_rock3"]
+height = 15.0
+radius = 4.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_debris"]
+albedo_color = Color(0.38, 0.24, 0.13, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_floating_barrel"]
+material = SubResource("StandardMaterial3D_debris")
+top_radius = 0.35
+bottom_radius = 0.35
+height = 0.95
+
+[node name="MainWorld" type="Node3D"]
+script = ExtResource("1_ocean_env")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866025, -0.383022, 0.321394, 0, 0.642788, 0.766044, -0.5, 0.663414, -0.55667, 0, 25, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 1.25
+shadow_enabled = true
+
+[node name="OceanSurface" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_ocean")
+
+[node name="SeaFloor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -26, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SeaFloor"]
+mesh = SubResource("PlaneMesh_seafloor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SeaFloor"]
+shape = SubResource("WorldBoundaryShape3D_seafloor")
+
+[node name="UnderwaterRock1" type="MeshInstance3D" parent="SeaFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 11, -18)
+mesh = SubResource("CylinderMesh_rock1")
+
+[node name="Rock1Collision" type="CollisionShape3D" parent="SeaFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 11, -18)
+shape = SubResource("CylinderShape3D_rock1")
+
+[node name="UnderwaterRock2" type="MeshInstance3D" parent="SeaFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 9, -12)
+mesh = SubResource("CylinderMesh_rock2")
+
+[node name="Rock2Collision" type="CollisionShape3D" parent="SeaFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 9, -12)
+shape = SubResource("CylinderShape3D_rock2")
+
+[node name="UnderwaterRock3" type="MeshInstance3D" parent="SeaFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 7.5, 16)
+mesh = SubResource("CylinderMesh_rock3")
+
+[node name="Rock3Collision" type="CollisionShape3D" parent="SeaFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 7.5, 16)
+shape = SubResource("CylinderShape3D_rock3")
+
+[node name="ShipwreckRaft" parent="." instance=ExtResource("3_raft_scene")]
+
+[node name="FloatingDebris" type="Node3D" parent="."]
+
+[node name="FloatingWood1" parent="FloatingDebris" instance=ExtResource("5_floating_wood")]
+transform = Transform3D(0.819152, 0, 0.573576, 0, 1, 0, -0.573576, 0, 0.819152, -5.5, 0, -4.2)
+
+[node name="FloatingWood2" parent="FloatingDebris" instance=ExtResource("5_floating_wood")]
+transform = Transform3D(0.5, 0, -0.866025, 0, 1, 0, 0.866025, 0, 0.5, 6.2, 0, 3.8)
+
+[node name="FloatingWood3" parent="FloatingDebris" instance=ExtResource("5_floating_wood")]
+transform = Transform3D(0.939693, 0, 0.34202, 0, 1, 0, -0.34202, 0, 0.939693, -8.5, 0, 7.4)
+
+[node name="FloatingWood4" parent="FloatingDebris" instance=ExtResource("5_floating_wood")]
+transform = Transform3D(0.34202, 0, -0.939693, 0, 1, 0, 0.939693, 0, 0.34202, 10.5, 0, -8.0)
+
+[node name="FloatingWood5" parent="FloatingDebris" instance=ExtResource("5_floating_wood")]
+transform = Transform3D(0.766044, 0, 0.642788, 0, 1, 0, -0.642788, 0, 0.766044, -2.0, 0, -12.5)
+
+[node name="FloatingBarrel" type="MeshInstance3D" parent="FloatingDebris"]
+transform = Transform3D(0.173648, -0.984808, 0, 0.984808, 0.173648, 0, 0, 0, 1, -4.2, -0.05, 5.1)
+mesh = SubResource("CylinderMesh_floating_barrel")
+
+[node name="Player" parent="." instance=ExtResource("4_player_scene")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0.6)
