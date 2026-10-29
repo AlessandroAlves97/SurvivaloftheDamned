@@ -11,6 +11,14 @@ const ITEM_NAMES: Dictionary = {
 	"chest": "Baú"
 }
 
+## Define quais itens leves/pequenos podem ser segurados diretamente nas mãos em 1ª pessoa
+## (Estruturas pesadas/grandes como o "chest" ficam false e usam preview de posicionamento)
+const ITEM_HOLDABLE: Dictionary = {
+	"wood": true,
+	"paddle": true,
+	"chest": false
+}
+
 ## Configurações de Movimentação em Terra / Jangada
 @export_group("Movimentação na Superfície")
 @export var walk_speed: float = 4.8
@@ -54,6 +62,11 @@ var selected_hotbar_slot: int = 0
 
 var _is_rowing: bool = false
 var _row_cycle: float = 0.0
+var _walk_bob_cycle: float = 0.0
+var _swim_stroke_cycle: float = 0.0
+var _idle_cycle: float = 0.0
+var _equip_dip: float = 0.0
+var _last_displayed_item: String = "__init__"
 var _chest_preview_valid: bool = false
 var _chest_preview_local_pos: Vector3 = Vector3.ZERO
 
@@ -70,6 +83,14 @@ var _hotbar_slot_labels: Array[Label] = []
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var interaction_ray: RayCast3D = $Head/Camera3D/InteractionRay
+@onready var first_person_rig: Node3D = $Head/Camera3D/FirstPersonRig
+@onready var left_arm: Node3D = $Head/Camera3D/FirstPersonRig/LeftArm
+@onready var right_arm: Node3D = $Head/Camera3D/FirstPersonRig/RightArm
+@onready var left_hand: Node3D = $Head/Camera3D/FirstPersonRig/LeftArm/LeftHand
+@onready var right_hand: Node3D = $Head/Camera3D/FirstPersonRig/RightArm/RightHand
+@onready var left_fingers: Node3D = $Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers
+@onready var right_fingers: Node3D = $Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers
+@onready var held_wood: Node3D = $Head/Camera3D/FirstPersonRig/RightArm/RightHand/HeldWood
 @onready var paddle_holder: Node3D = $Head/Camera3D/PaddleHolder
 @onready var chest_preview: MeshInstance3D = $ChestPreview
 
@@ -227,7 +248,7 @@ func _process(delta: float) -> void:
 
 	_update_chest_placement_preview()
 	_update_interaction_target()
-	_animate_paddle(delta)
+	_animate_first_person_hands(delta)
 
 
 func _physics_process(delta: float) -> void:
@@ -242,8 +263,6 @@ func _physics_process(delta: float) -> void:
 		underwater_overlay.visible = is_head_underwater
 
 	var equipped: String = _get_equipped_item()
-	if paddle_holder:
-		paddle_holder.visible = (equipped == "paddle") and not is_swimming
 
 	# Remada contínua mantendo LMB (frente) ou RMB (ré) pressionado
 	_is_rowing = false
@@ -327,20 +346,202 @@ func _process_continuous_rowing(power_multiplier: float, delta: float) -> void:
 	raft.apply_continuous_paddle(forward_dir, turn_rate, delta)
 
 
-func _animate_paddle(delta: float) -> void:
-	if not paddle_holder or not paddle_holder.visible:
+func is_item_holdable(item_id: String) -> bool:
+	return bool(ITEM_HOLDABLE.get(item_id, false))
+
+
+func _animate_first_person_hands(delta: float) -> void:
+	var equipped: String = _get_equipped_item()
+	var holdable: bool = is_item_holdable(equipped)
+	var active_hand_item: String = equipped if holdable else ""
+
+	# Dispara uma leve animação de transição nos braços ao trocar o item exibido
+	if active_hand_item != _last_displayed_item:
+		_last_displayed_item = active_hand_item
+		_equip_dip = 1.0
+
+	_equip_dip = move_toward(_equip_dip, 0.0, delta * 5.0)
+	_idle_cycle = wrapf(_idle_cycle + delta * 2.0, 0.0, TAU)
+
+	var horiz_speed: float = Vector2(velocity.x, velocity.z).length()
+	var total_speed: float = velocity.length()
+
+	# Atualiza visibilidade dos itens leves seguráveis nas mãos
+	var show_paddle: bool = (active_hand_item == "paddle") and not is_swimming
+	var show_wood: bool = (active_hand_item == "wood")
+
+	if paddle_holder:
+		paddle_holder.visible = show_paddle
+	if held_wood:
+		held_wood.visible = show_wood
+		if show_wood:
+			# Posiciona a tábua apoiada na palma e inclinada diagonalmente para cima/frente,
+			# ficando claramente visível na tela em uma pegada humana natural
+			held_wood.position = Vector3(-0.025, 0.045, -0.055)
+			held_wood.rotation_degrees = Vector3(46.0, 14.0, 22.0)
+
+	# Animação do Remo (quando visível)
+	if show_paddle and paddle_holder:
+		if _is_rowing:
+			_row_cycle = wrapf(_row_cycle + delta * 5.0, 0.0, TAU)
+			var s: float = sin(_row_cycle)
+			var c: float = cos(_row_cycle)
+			paddle_holder.position = Vector3(0.24 + c * 0.045, -0.22 + s * 0.085 - _equip_dip * 0.12, -0.52 - c * 0.12)
+			paddle_holder.rotation_degrees = Vector3(-14.0 + s * 22.0, -24.0 + c * 10.0, 18.0)
+		else:
+			_row_cycle = 0.0
+			var target_paddle_pos := Vector3(0.24, -0.22 - _equip_dip * 0.12, -0.52)
+			paddle_holder.position = paddle_holder.position.lerp(target_paddle_pos, 10.0 * delta)
+			paddle_holder.rotation_degrees = paddle_holder.rotation_degrees.lerp(Vector3(-14.0, -24.0, 18.0), 10.0 * delta)
+
+	if not left_arm or not right_arm:
 		return
 
-	if _is_rowing:
-		_row_cycle = wrapf(_row_cycle + delta * 5.2, 0.0, TAU)
-		var s: float = sin(_row_cycle)
-		var c: float = cos(_row_cycle)
-		paddle_holder.position = Vector3(0.38 + c * 0.04, -0.26 + s * 0.09, -0.68 - c * 0.14)
-		paddle_holder.rotation_degrees = Vector3(-18.0 + s * 22.0, -18.0 + c * 10.0, 12.0)
+	var idle_y: float = sin(_idle_cycle) * 0.005
+	var idle_x: float = cos(_idle_cycle * 0.5) * 0.004
+	var dip_offset: float = -_equip_dip * 0.11
+
+	# Postura base anatômica: cotovelos entram pelos cantos inferiores externos e
+	# os antebraços dobram para dentro (±46° yaw) e levemente para cima (+20° pitch)
+	var left_target_pos := Vector3(-0.30 + idle_x, -0.30 + idle_y + dip_offset, -0.27)
+	var left_target_rot := Vector3(20.0, -46.0, 16.0)
+	var left_hand_rot := Vector3(6.0, -8.0, 12.0)
+	var left_finger_curl: float = -12.0
+
+	var right_target_pos := Vector3(0.30 - idle_x, -0.30 + idle_y + dip_offset, -0.27)
+	var right_target_rot := Vector3(20.0, 46.0, -16.0)
+	var right_hand_rot := Vector3(6.0, 8.0, -12.0)
+	var right_finger_curl: float = -12.0
+
+	if is_swimming:
+		var swim_move_factor: float = clampf(total_speed / swim_speed, 0.0, 1.4)
+		var stroke_speed: float = lerpf(2.2, 4.2, clampf(swim_move_factor, 0.0, 1.0))
+		_swim_stroke_cycle = wrapf(_swim_stroke_cycle + delta * stroke_speed, 0.0, TAU)
+
+		if swim_move_factor > 0.15:
+			# Nado Peito (Breaststroke) humano realista em 3 fases contínuas:
+			# 1) Esticar mãos juntas à frente -> 2) Puxada aberta para os lados/trás -> 3) Recolhimento pelo peito
+			var p: float = _swim_stroke_cycle
+			var reach_forward: float = cos(p)                     # +1 esticado à frente, -1 puxado atrás
+			var sweep_wide: float = maxf(0.0, sin(p))             # Abre os braços para fora na fase de puxada
+			var recovery_tuck: float = maxf(0.0, -sin(p))         # Recolhe os cotovelos por baixo na volta
+			var vertical_wave: float = sin(p - 0.6)               # Desce na puxada, sobe no alcance
+
+			var spread_x: float = 0.15 + sweep_wide * 0.19 - recovery_tuck * 0.03
+			var stroke_y: float = -0.23 + vertical_wave * 0.045 - recovery_tuck * 0.035
+			var stroke_z: float = -0.31 - reach_forward * 0.075 + sweep_wide * 0.03
+
+			var arm_pitch: float = 24.0 + reach_forward * 10.0 - sweep_wide * 12.0
+			var arm_yaw_inward: float = 42.0 + reach_forward * 8.0 - sweep_wide * 24.0
+			var arm_roll: float = 18.0 + sweep_wide * 28.0 - recovery_tuck * 14.0
+
+			left_target_pos = Vector3(-spread_x, stroke_y + idle_y, stroke_z)
+			left_target_rot = Vector3(arm_pitch, -arm_yaw_inward, arm_roll)
+			left_hand_rot = Vector3(-8.0 * sweep_wide, -10.0, 18.0 * sweep_wide)
+			left_finger_curl = 4.0
+
+			if show_wood:
+				# Se estiver segurando madeira durante o nado, mão direita mantém a madeira firme junto ao corpo
+				right_target_pos = Vector3(0.24, -0.22 + vertical_wave * 0.015 + dip_offset, -0.27)
+				right_target_rot = Vector3(26.0, 44.0, -18.0)
+				right_hand_rot = Vector3(10.0, 12.0, -18.0)
+				right_finger_curl = -42.0
+			else:
+				right_target_pos = Vector3(spread_x, stroke_y + idle_y, stroke_z)
+				right_target_rot = Vector3(arm_pitch, arm_yaw_inward, -arm_roll)
+				right_hand_rot = Vector3(-8.0 * sweep_wide, 10.0, -18.0 * sweep_wide)
+				right_finger_curl = 4.0
+		else:
+			# Boiando parado na água (Treading Water / Sculling suave de sustentação)
+			var scull_s: float = sin(_swim_stroke_cycle)
+			var scull_c: float = cos(_swim_stroke_cycle)
+
+			left_target_pos = Vector3(-0.24 - scull_s * 0.035, -0.26 + scull_c * 0.012, -0.29)
+			left_target_rot = Vector3(22.0, -44.0 - scull_s * 10.0, 18.0 + scull_c * 14.0)
+			left_hand_rot = Vector3(4.0, -8.0, 16.0 * scull_c)
+			left_finger_curl = -4.0
+
+			if show_wood:
+				right_target_pos = Vector3(0.24, -0.21 + scull_c * 0.01 + dip_offset, -0.27)
+				right_target_rot = Vector3(28.0, 44.0, -18.0)
+				right_hand_rot = Vector3(10.0, 12.0, -18.0)
+				right_finger_curl = -42.0
+			else:
+				right_target_pos = Vector3(0.24 + scull_s * 0.035, -0.26 + scull_c * 0.012, -0.29)
+				right_target_rot = Vector3(22.0, 44.0 + scull_s * 10.0, -18.0 - scull_c * 14.0)
+				right_hand_rot = Vector3(4.0, 8.0, -16.0 * scull_c)
+				right_finger_curl = -4.0
 	else:
-		_row_cycle = 0.0
-		paddle_holder.position = paddle_holder.position.lerp(Vector3(0.38, -0.26, -0.68), 10.0 * delta)
-		paddle_holder.rotation_degrees = paddle_holder.rotation_degrees.lerp(Vector3(-18.0, -18.0, 12.0), 10.0 * delta)
+		# Balanço de caminhada/corrida na superfície
+		if horiz_speed > 0.2 and is_on_floor():
+			var bob_speed: float = clampf(horiz_speed / walk_speed, 0.5, 1.8) * 7.5
+			_walk_bob_cycle = wrapf(_walk_bob_cycle + delta * bob_speed, 0.0, TAU)
+		else:
+			_walk_bob_cycle = move_toward(_walk_bob_cycle, 0.0, delta * 4.0)
+
+		var move_amp: float = clampf(horiz_speed / walk_speed, 0.0, 1.2)
+		var bob_s: float = sin(_walk_bob_cycle) * move_amp
+		var bob_c: float = cos(_walk_bob_cycle) * move_amp
+
+		if show_paddle:
+			# As duas mãos seguram a haste do remo em ângulo anatômico e acompanham a remada
+			var row_s: float = sin(_row_cycle) if _is_rowing else 0.0
+			var row_c: float = cos(_row_cycle) if _is_rowing else 0.0
+
+			right_target_pos = Vector3(0.27 + row_c * 0.035, -0.20 + row_s * 0.065 + dip_offset, -0.28 - row_c * 0.08)
+			right_target_rot = Vector3(28.0 + row_s * 16.0, 38.0 - row_c * 6.0, -22.0)
+			right_hand_rot = Vector3(8.0, 10.0, -20.0)
+			right_finger_curl = -46.0
+
+			left_target_pos = Vector3(-0.18 + row_c * 0.03, -0.24 + row_s * 0.06 + dip_offset, -0.31 - row_c * 0.08)
+			left_target_rot = Vector3(24.0 + row_s * 14.0, -54.0 + row_c * 6.0, 20.0)
+			left_hand_rot = Vector3(6.0, -12.0, 18.0)
+			left_finger_curl = -46.0
+		elif show_wood:
+			# Mão direita traz a tábua de madeira para uma posição visível e ergonômica à frente/direita;
+			# dedos fecham ao redor da madeira e mão esquerda acompanha relaxada no canto inferior
+			right_target_pos = Vector3(0.24 + bob_c * 0.01, -0.21 + absf(bob_s) * 0.014 + idle_y + dip_offset, -0.27 - bob_s * 0.012)
+			right_target_rot = Vector3(28.0 + bob_s * 3.5, 44.0, -18.0)
+			right_hand_rot = Vector3(10.0, 12.0, -18.0)
+			right_finger_curl = -42.0
+
+			left_target_pos = Vector3(-0.30 - bob_c * 0.01, -0.30 + absf(bob_c) * 0.014 + idle_y, -0.27 + bob_s * 0.018)
+			left_target_rot = Vector3(18.0 - bob_s * 4.5, -48.0, 16.0)
+			left_hand_rot = Vector3(6.0, -8.0, 12.0)
+			left_finger_curl = -14.0
+		elif equipped == "chest":
+			# Item pesado (Baú): mãos livres dobradas para dentro em postura de posicionamento
+			left_target_pos = Vector3(-0.27, -0.27 + idle_y + dip_offset * 0.5, -0.28)
+			left_target_rot = Vector3(24.0, -44.0, 14.0)
+			left_finger_curl = -8.0
+
+			right_target_pos = Vector3(0.27, -0.27 + idle_y + dip_offset * 0.5, -0.28)
+			right_target_rot = Vector3(24.0, 44.0, -14.0)
+			right_finger_curl = -8.0
+		else:
+			# Mãos vazias dobradas naturalmente nos cantos inferiores, com balanço de caminhada
+			left_target_pos = Vector3(-0.30, -0.30 + absf(bob_s) * 0.015 + idle_y + dip_offset * 0.4, -0.27 + bob_s * 0.022)
+			left_target_rot = Vector3(18.0 + bob_s * 5.5, -48.0 + bob_c * 3.0, 16.0)
+			left_finger_curl = -14.0
+
+			right_target_pos = Vector3(0.30, -0.30 + absf(bob_c) * 0.015 + idle_y + dip_offset * 0.4, -0.27 - bob_s * 0.022)
+			right_target_rot = Vector3(18.0 - bob_s * 5.5, 48.0 - bob_c * 3.0, -16.0)
+			right_finger_curl = -14.0
+
+	left_arm.position = left_arm.position.lerp(left_target_pos, 12.0 * delta)
+	left_arm.rotation_degrees = left_arm.rotation_degrees.lerp(left_target_rot, 12.0 * delta)
+
+	right_arm.position = right_arm.position.lerp(right_target_pos, 12.0 * delta)
+	right_arm.rotation_degrees = right_arm.rotation_degrees.lerp(right_target_rot, 12.0 * delta)
+
+	if left_hand:
+		left_hand.rotation_degrees = left_hand.rotation_degrees.lerp(left_hand_rot, 12.0 * delta)
+	if right_hand:
+		right_hand.rotation_degrees = right_hand.rotation_degrees.lerp(right_hand_rot, 12.0 * delta)
+	if left_fingers:
+		left_fingers.rotation_degrees.x = lerpf(left_fingers.rotation_degrees.x, left_finger_curl, 14.0 * delta)
+	if right_fingers:
+		right_fingers.rotation_degrees.x = lerpf(right_fingers.rotation_degrees.x, right_finger_curl, 14.0 * delta)
 
 
 func _update_chest_placement_preview() -> void:
@@ -500,6 +701,8 @@ func _auto_equip_to_hotbar(item_id: String) -> void:
 func _select_hotbar_slot(slot_index: int) -> void:
 	if slot_index < 0 or slot_index >= HOTBAR_SIZE:
 		return
+	if selected_hotbar_slot != slot_index:
+		_equip_dip = maxf(_equip_dip, 0.65)
 	selected_hotbar_slot = slot_index
 	_refresh_hotbar_ui()
 	_update_hud()

@@ -1,10 +1,25 @@
-[gd_scene load_steps=16 format=3 uid="uid://c8q2x4v9p1k3m"]
+[gd_scene load_steps=32 format=3 uid="uid://c8q2x4v9p1k3m"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player_script"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.38
 height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin"]
+albedo_color = Color(0.84, 0.65, 0.51, 1)
+roughness = 0.68
+rim_enabled = true
+rim = 0.18
+rim_tint = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sleeve"]
+albedo_color = Color(0.2, 0.28, 0.35, 1)
+roughness = 0.92
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood_dark"]
+albedo_color = Color(0.32, 0.2, 0.11, 1)
+roughness = 0.9
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_paddle_shaft"]
 albedo_color = Color(0.46, 0.3, 0.16, 1)
@@ -17,6 +32,97 @@ roughness = 0.8
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_paddle_rope"]
 albedo_color = Color(0.72, 0.64, 0.45, 1)
 roughness = 0.95
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_upper_arm"]
+material = SubResource("StandardMaterial3D_sleeve")
+radius = 0.047
+height = 0.25
+radial_segments = 24
+rings = 8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_arm_sleeve"]
+material = SubResource("StandardMaterial3D_sleeve")
+top_radius = 0.046
+bottom_radius = 0.05
+height = 0.09
+radial_segments = 24
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_forearm_upper"]
+material = SubResource("StandardMaterial3D_skin")
+radius = 0.042
+height = 0.22
+radial_segments = 24
+rings = 8
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_forearm_lower"]
+material = SubResource("StandardMaterial3D_skin")
+radius = 0.033
+height = 0.21
+radial_segments = 24
+rings = 8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_arm_wristband"]
+material = SubResource("StandardMaterial3D_paddle_rope")
+top_radius = 0.035
+bottom_radius = 0.035
+height = 0.026
+radial_segments = 24
+
+[sub_resource type="SphereMesh" id="SphereMesh_hand_palm"]
+material = SubResource("StandardMaterial3D_skin")
+radius = 0.042
+height = 0.084
+radial_segments = 24
+rings = 12
+
+[sub_resource type="SphereMesh" id="SphereMesh_thumb_pad"]
+material = SubResource("StandardMaterial3D_skin")
+radius = 0.024
+height = 0.048
+radial_segments = 20
+rings = 10
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_thumb_prox"]
+material = SubResource("StandardMaterial3D_skin")
+radius = 0.0105
+height = 0.046
+radial_segments = 16
+rings = 6
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_thumb_dist"]
+material = SubResource("StandardMaterial3D_skin")
+radius = 0.009
+height = 0.036
+radial_segments = 16
+rings = 6
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_finger_prox"]
+material = SubResource("StandardMaterial3D_skin")
+radius = 0.0086
+height = 0.046
+radial_segments = 16
+rings = 6
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_finger_dist"]
+material = SubResource("StandardMaterial3D_skin")
+radius = 0.0074
+height = 0.038
+radial_segments = 16
+rings = 6
+
+[sub_resource type="BoxMesh" id="BoxMesh_held_wood_main"]
+material = SubResource("StandardMaterial3D_paddle_shaft")
+size = Vector3(0.095, 0.038, 0.48)
+
+[sub_resource type="BoxMesh" id="BoxMesh_held_wood_bark"]
+material = SubResource("StandardMaterial3D_wood_dark")
+size = Vector3(0.024, 0.042, 0.46)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_held_wood_knot"]
+material = SubResource("StandardMaterial3D_wood_dark")
+top_radius = 0.016
+bottom_radius = 0.018
+height = 0.041
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_paddle_shaft"]
 material = SubResource("StandardMaterial3D_paddle_shaft")
@@ -101,6 +207,178 @@ far = 2000.0
 [node name="InteractionRay" type="RayCast3D" parent="Head/Camera3D"]
 target_position = Vector3(0, 0, -3.8)
 collision_mask = 3
+
+[node name="FirstPersonRig" type="Node3D" parent="Head/Camera3D"]
+
+[node name="LeftArm" type="Node3D" parent="Head/Camera3D/FirstPersonRig"]
+transform = Transform3D(0.829038, -0.194114, -0.524005, 0.0871557, 0.976296, -0.198267, 0.552264, 0.0958458, 0.828141, -0.26, -0.29, -0.32)
+
+[node name="LeftUpperArm" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm"]
+transform = Transform3D(0.939693, 0.116978, 0.321394, 0.34202, -0.321394, -0.883022, 0, 0.939693, -0.34202, -0.04, 0.03, 0.21)
+mesh = SubResource("CapsuleMesh_upper_arm")
+
+[node name="LeftSleeve" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm"]
+transform = Transform3D(1.04, 0, 0, 0, 0, -0.92, 0, 1, 0, 0, 0, 0.11)
+mesh = SubResource("CylinderMesh_arm_sleeve")
+
+[node name="LeftForearmUpper" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm"]
+transform = Transform3D(1.04, 0, 0, 0, 0, -0.88, 0, 1, 0, 0, 0, 0.035)
+mesh = SubResource("CapsuleMesh_forearm_upper")
+
+[node name="LeftForearmLower" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm"]
+transform = Transform3D(1.08, 0, 0, 0, 0, -0.82, 0, 1, 0, 0, 0, -0.045)
+mesh = SubResource("CapsuleMesh_forearm_lower")
+
+[node name="LeftWristBand" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm"]
+transform = Transform3D(1.08, 0, 0, 0, 0, -0.84, 0, 1, 0, 0, 0, -0.122)
+mesh = SubResource("CylinderMesh_arm_wristband")
+
+[node name="LeftHand" type="Node3D" parent="Head/Camera3D/FirstPersonRig/LeftArm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.135)
+
+[node name="LeftPalm" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand"]
+transform = Transform3D(0.95, 0, 0, 0, 0.44, 0, 0, 0, 1.12, 0, -0.002, -0.036)
+mesh = SubResource("SphereMesh_hand_palm")
+
+[node name="LeftThumbPad" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand"]
+transform = Transform3D(0.9, 0, 0, 0, 0.65, 0, 0, 0, 1.15, 0.024, -0.007, -0.026)
+mesh = SubResource("SphereMesh_thumb_pad")
+
+[node name="LeftThumbProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand"]
+transform = Transform3D(0.866025, 0.433013, -0.25, 0, 0.5, 0.866025, 0.5, -0.75, 0.433013, 0.038, -0.005, -0.04)
+mesh = SubResource("CapsuleMesh_thumb_prox")
+
+[node name="LeftThumbDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand"]
+transform = Transform3D(0.965926, 0.224144, -0.12941, 0, 0.5, 0.866025, 0.258819, -0.836516, 0.482963, 0.046, -0.008, -0.064)
+mesh = SubResource("CapsuleMesh_thumb_dist")
+
+[node name="LeftFingers" type="Node3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.07)
+
+[node name="IndexProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers"]
+transform = Transform3D(1, 0, 0, 0, 0.173648, -0.984808, 0, 0.984808, 0.173648, 0.025, -0.002, -0.015)
+mesh = SubResource("CapsuleMesh_finger_prox")
+
+[node name="IndexDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers"]
+transform = Transform3D(1, 0, 0, 0, 0.5, -0.866025, 0, 0.866025, 0.5, 0.025, -0.011, -0.036)
+mesh = SubResource("CapsuleMesh_finger_dist")
+
+[node name="MiddleProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers"]
+transform = Transform3D(1.04, 0, 0, 0, 0.173648, -1.04, 0, 1.04, 0.173648, 0.008, 0, -0.017)
+mesh = SubResource("CapsuleMesh_finger_prox")
+
+[node name="MiddleDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers"]
+transform = Transform3D(1.04, 0, 0, 0, 0.5, -0.9, 0, 0.9, 0.5, 0.008, -0.01, -0.04)
+mesh = SubResource("CapsuleMesh_finger_dist")
+
+[node name="RingProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers"]
+transform = Transform3D(0.96, 0, 0, 0, 0.173648, -0.96, 0, 0.96, 0.173648, -0.009, -0.002, -0.015)
+mesh = SubResource("CapsuleMesh_finger_prox")
+
+[node name="RingDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers"]
+transform = Transform3D(0.96, 0, 0, 0, 0.5, -0.84, 0, 0.84, 0.5, -0.009, -0.011, -0.036)
+mesh = SubResource("CapsuleMesh_finger_dist")
+
+[node name="PinkyProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers"]
+transform = Transform3D(0.86, 0, 0, 0, 0.173648, -0.82, 0, 0.82, 0.173648, -0.025, -0.005, -0.011)
+mesh = SubResource("CapsuleMesh_finger_prox")
+
+[node name="PinkyDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/LeftArm/LeftHand/LeftFingers"]
+transform = Transform3D(0.86, 0, 0, 0, 0.5, -0.72, 0, 0.72, 0.5, -0.025, -0.013, -0.029)
+mesh = SubResource("CapsuleMesh_finger_dist")
+
+[node name="RightArm" type="Node3D" parent="Head/Camera3D/FirstPersonRig"]
+transform = Transform3D(0.829038, 0.194114, 0.524005, -0.0871557, 0.976296, -0.198267, -0.552264, 0.0958458, 0.828141, 0.26, -0.29, -0.32)
+
+[node name="RightUpperArm" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm"]
+transform = Transform3D(0.939693, -0.116978, -0.321394, -0.34202, -0.321394, -0.883022, 0, 0.939693, -0.34202, 0.04, 0.03, 0.21)
+mesh = SubResource("CapsuleMesh_upper_arm")
+
+[node name="RightSleeve" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm"]
+transform = Transform3D(1.04, 0, 0, 0, 0, -0.92, 0, 1, 0, 0, 0, 0.11)
+mesh = SubResource("CylinderMesh_arm_sleeve")
+
+[node name="RightForearmUpper" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm"]
+transform = Transform3D(1.04, 0, 0, 0, 0, -0.88, 0, 1, 0, 0, 0, 0.035)
+mesh = SubResource("CapsuleMesh_forearm_upper")
+
+[node name="RightForearmLower" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm"]
+transform = Transform3D(1.08, 0, 0, 0, 0, -0.82, 0, 1, 0, 0, 0, -0.045)
+mesh = SubResource("CapsuleMesh_forearm_lower")
+
+[node name="RightWristBand" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm"]
+transform = Transform3D(1.08, 0, 0, 0, 0, -0.84, 0, 1, 0, 0, 0, -0.122)
+mesh = SubResource("CylinderMesh_arm_wristband")
+
+[node name="RightHand" type="Node3D" parent="Head/Camera3D/FirstPersonRig/RightArm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.135)
+
+[node name="RightPalm" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand"]
+transform = Transform3D(0.95, 0, 0, 0, 0.44, 0, 0, 0, 1.12, 0, -0.002, -0.036)
+mesh = SubResource("SphereMesh_hand_palm")
+
+[node name="RightThumbPad" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand"]
+transform = Transform3D(0.9, 0, 0, 0, 0.65, 0, 0, 0, 1.15, -0.024, -0.007, -0.026)
+mesh = SubResource("SphereMesh_thumb_pad")
+
+[node name="RightThumbProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand"]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, -0.038, -0.005, -0.04)
+mesh = SubResource("CapsuleMesh_thumb_prox")
+
+[node name="RightThumbDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand"]
+transform = Transform3D(0.965926, -0.224144, 0.12941, 0, 0.5, 0.866025, -0.258819, -0.836516, 0.482963, -0.046, -0.008, -0.064)
+mesh = SubResource("CapsuleMesh_thumb_dist")
+
+[node name="RightFingers" type="Node3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.07)
+
+[node name="IndexProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers"]
+transform = Transform3D(1, 0, 0, 0, 0.173648, -0.984808, 0, 0.984808, 0.173648, -0.025, -0.002, -0.015)
+mesh = SubResource("CapsuleMesh_finger_prox")
+
+[node name="IndexDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers"]
+transform = Transform3D(1, 0, 0, 0, 0.5, -0.866025, 0, 0.866025, 0.5, -0.025, -0.011, -0.036)
+mesh = SubResource("CapsuleMesh_finger_dist")
+
+[node name="MiddleProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers"]
+transform = Transform3D(1.04, 0, 0, 0, 0.173648, -1.04, 0, 1.04, 0.173648, -0.008, 0, -0.017)
+mesh = SubResource("CapsuleMesh_finger_prox")
+
+[node name="MiddleDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers"]
+transform = Transform3D(1.04, 0, 0, 0, 0.5, -0.9, 0, 0.9, 0.5, -0.008, -0.01, -0.04)
+mesh = SubResource("CapsuleMesh_finger_dist")
+
+[node name="RingProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers"]
+transform = Transform3D(0.96, 0, 0, 0, 0.173648, -0.96, 0, 0.96, 0.173648, 0.009, -0.002, -0.015)
+mesh = SubResource("CapsuleMesh_finger_prox")
+
+[node name="RingDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers"]
+transform = Transform3D(0.96, 0, 0, 0, 0.5, -0.84, 0, 0.84, 0.5, 0.009, -0.011, -0.036)
+mesh = SubResource("CapsuleMesh_finger_dist")
+
+[node name="PinkyProx" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers"]
+transform = Transform3D(0.86, 0, 0, 0, 0.173648, -0.82, 0, 0.82, 0.173648, 0.025, -0.005, -0.011)
+mesh = SubResource("CapsuleMesh_finger_prox")
+
+[node name="PinkyDist" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/RightFingers"]
+transform = Transform3D(0.86, 0, 0, 0, 0.5, -0.72, 0, 0.72, 0.5, 0.025, -0.013, -0.029)
+mesh = SubResource("CapsuleMesh_finger_dist")
+
+[node name="HeldWood" type="Node3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand"]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.02, 0.035, -0.055)
+
+[node name="WoodPlankMain" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/HeldWood"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.08)
+mesh = SubResource("BoxMesh_held_wood_main")
+
+[node name="WoodBarkEdge" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/HeldWood"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.044, 0, -0.08)
+mesh = SubResource("BoxMesh_held_wood_bark")
+
+[node name="WoodKnot" type="MeshInstance3D" parent="Head/Camera3D/FirstPersonRig/RightArm/RightHand/HeldWood"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.012, 0, -0.16)
+mesh = SubResource("CylinderMesh_held_wood_knot")
 
 [node name="PaddleHolder" type="Node3D" parent="Head/Camera3D"]
 visible = false

@@ -7,7 +7,8 @@
 ## 🎮 Funcionalidades Implementadas (Progresso Atual)
 
 ### 🏊 Movimentação e Sobrevivência (Estilo *Subnautica* / *Raft*)
-- **Movimentação Híbrida em 1ª Pessoa:** Transição fluida entre caminhada/corrida sobre a jangada e natação/mergulho livre tridimensional no oceano.
+- **Movimentação Híbrida em 1ª Pessoa:** Transição fluida entre caminhada/corrida sobre a jangada e natação/mergulho livre tridimensional no oceano, com rampa submersa calibrada para subir na jangada caminhando diretamente da água.
+- **Braços e Mãos Articulados em 1ª Pessoa (`FirstPersonRig`):** Sistema procedural de braços, mãos e dedos visíveis na câmera com animações dinâmicas para respiração (*idle*), balanço de caminhada/corrida, braçadas de nado na água e empunhadura anatômica de itens leves (como tábuas de madeira e o remo com ambas as mãos).
 - **Status Vitais:** Sistema ativo de **Vida**, **Oxigênio** (consumido ao mergulhar com a cabeça submersa e regenerado na superfície), **Sede** e **Fome**.
 - **Atmosfera Subaquática Dinâmica:** Mudança automática de iluminação ambiental, densidade de neblina (*fog*) e overlay visual ao submergir.
 

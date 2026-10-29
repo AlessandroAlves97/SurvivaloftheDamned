@@ -51,7 +51,7 @@ func is_player_on_raft(player: CharacterBody3D) -> bool:
 	if player.get("is_swimming"):
 		return false
 	var local_pos: Vector3 = to_local(player.global_position)
-	return absf(local_pos.x) <= 2.8 and local_pos.z >= -2.8 and local_pos.z <= 4.0 and local_pos.y >= -0.6 and local_pos.y <= 3.5
+	return absf(local_pos.x) <= 2.8 and local_pos.z >= -2.8 and local_pos.z <= 4.2 and local_pos.y >= -0.75 and local_pos.y <= 3.5
 
 
 func apply_continuous_paddle(direction_xz: Vector3, turn_rate: float, delta: float) -> void:
