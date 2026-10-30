@@ -9,8 +9,15 @@
 ### 🏊 Movimentação e Sobrevivência (Estilo *Subnautica* / *Raft*)
 - **Movimentação Híbrida em 1ª Pessoa:** Transição fluida entre caminhada/corrida sobre a jangada e natação/mergulho livre tridimensional no oceano, com rampa submersa calibrada para subir na jangada caminhando diretamente da água.
 - **Braços e Mãos Articulados em 1ª Pessoa (`FirstPersonRig`):** Sistema procedural de braços, mãos e dedos visíveis na câmera com animações dinâmicas para respiração (*idle*), balanço de caminhada/corrida, braçadas de nado na água e empunhadura anatômica de itens leves (como tábuas de madeira e o remo com ambas as mãos).
-- **Status Vitais:** Sistema ativo de **Vida**, **Oxigênio** (consumido ao mergulhar com a cabeça submersa e regenerado na superfície), **Sede** e **Fome**.
+- **Status Vitais e Morte (*Death Screen*):** Sistema ativo de **Vida**, **Oxigênio** (consumido ao mergulhar com a cabeça submersa e regenerado na superfície), **Sede** e **Fome**. Ao chegar a `0%` de vida, o jogo exibe uma **Tela de Morte** informando a causa exata (ataque de tubarão, sufocamento, envenenamento por ouriço-do-mar, inanição ou desidratação). Pressionar **Espaço** faz o jogador renascer no *spawn* (jangada), perdendo todo o seu inventário.
 - **Atmosfera Subaquática Dinâmica:** Mudança automática de iluminação ambiental, densidade de neblina (*fog*) e overlay visual ao submergir.
+
+### 🪸 Fundo do Mar Realista, Cavernas, Flora e Fauna Marinha
+- **Relevo Submarino 3D com Cáusticas (`seafloor.gdshader`):** Terreno submerso esculpido com colinas, dunas de areia, anéis de recife e trincheiras abissais com colisão física (`ConcavePolygonShape3D`) e projeção de cáusticas solares animadas.
+- **Cavernas Submarinas Exploráveis:** 4 grutas e túneis rochosos submersos (*Gruta do Recife Luminoso*, *Caverna Abissal Cristalina*, *Túnel Submerso das Algas* e *Santuário das Anêmonas*) com estalactites, estalagmites, cristais bioluminescentes e iluminação interna (`OmniLight3D`).
+- **Vegetação e Vida Bentônica (`kelp.gdshader`):** Florestas de algas gigantes (*kelp*) e bancos de grama marinha que balançam com a correnteza via shader, além de corais tubulares/cérebro, estrelas-do-mar e ouriços-do-mar venenosos.
+- **Peixes Coletáveis e Comestíveis:** Cardumes de peixes em 4 variações que nadam pelos recifes e cavernas, podendo ser coletados com **`[E]`** e comidos (**Clique Esquerdo**, **Clique Direito**, **`[F]`** ou pelo menu de Inventário) para restaurar **+30% de Fome**.
+- **Grande Tubarão Branco Poligonal (Estilo *Raft*):** Tubarões brancos em modelo *low-poly* articulado que patrulham as águas profundas e periodicamente sobem atrás do jogador para atacar ou rodear a jangada.
 
 ### 🚣 Jangada do Naufrágio (*Shipwreck Raft*) & Navegação
 - **Oceano Infinito com Ondas em Shader:** Superfície marítima animada via `ocean.gdshader` que acompanha o deslocamento do jogador.
@@ -33,9 +40,10 @@
 | :--- | :--- |
 | **W, A, S, D** | Movimentar na jangada / Nadar |
 | **Shift** | Correr / Nadar rápido |
-| **Espaço** | Pular (na jangada) / Subir à superfície (na água) |
+| **Espaço** | Pular (na jangada) / Subir à superfície (na água) / Renascer (na *Death Screen*) |
 | **Ctrl** | Mergulhar mais fundo |
-| **E** | Interagir (Coletar madeira no mar / Abrir Baú) |
+| **E** | Interagir (Coletar madeira ou peixes no mar / Abrir Baú) |
+| **F** ou **Clique Esquerdo/Direito** | Comer Peixe equipado na HotBar (+30% Fome) |
 | **Tab** ou **I** | Abrir / Fechar Menu de Inventário e Crafting |
 | **1 a 6** | Selecionar slots da HotBar |
 | **Clique Esquerdo (Segurar)** | Remar para frente *(com Remo equipado sobre o raft)* |
@@ -50,6 +58,9 @@
 ```text
 survival-of-the-damned/
 ├── scenes/
+│   ├── creatures/
+│   │   ├── fish.tscn               # Peixes 3D articulados coletáveis
+│   │   └── great_white_shark.tscn  # Grande Tubarão Branco poligonal articulado
 │   ├── items/
 │   │   └── floating_wood.tscn      # Cena da madeira flutuante coletável
 │   ├── player/
@@ -58,19 +69,25 @@ survival-of-the-damned/
 │   │   ├── shipwreck_raft.tscn     # Jangada inicial do naufrágio
 │   │   └── storage_chest.tscn      # Estrutura de baú posicionável
 │   └── world/
-│       └── main_world.tscn         # Cena principal (Oceano, Iluminação, Spawner)
+│       └── main_world.tscn         # Cena principal (Oceano, Relevo, Iluminação, Spawners)
 ├── scripts/
+│   ├── creatures/
+│   │   ├── fish.gd                 # IA de cardume, animação de cauda e coleta
+│   │   └── great_white_shark.gd    # IA de patrulha profunda e caça ao jogador (estilo Raft)
 │   ├── items/
 │   │   └── floating_wood.gd        # Flutuação nas ondas e coleta
 │   ├── player/
-│   │   └── player.gd               # Movimentação, sobrevivência, inventário, craft e UI
+│   │   └── player.gd               # Movimentação, sobrevivência, morte/renascimento, inventário e UI
 │   ├── structures/
 │   │   ├── shipwreck_raft.gd       # Física de navegação e validação de construção no deck
 │   │   └── storage_chest.gd        # Lógica de capacidade e interação do baú
 │   └── world/
-│       └── ocean_environment.gd    # Atmosfera subaquática e spawner de recursos no mar
+│       ├── ocean_environment.gd    # Atmosfera subaquática e spawners (madeiras, peixes e tubarões)
+│       └── seafloor_generator.gd   # Geração do relevo submarino, cavernas, algas e corais
 ├── shaders/
-│   └── ocean.gdshader              # Shader de ondas, espuma e reflexos do oceano
+│   ├── kelp.gdshader               # Shader de balanço subaquático das algas e grama marinha
+│   ├── ocean.gdshader              # Shader de ondas, espuma e reflexos do oceano
+│   └── seafloor.gdshader           # Shader de areia, rocha abissal e cáusticas solares no fundo do mar
 └── project.godot                   # Configurações do projeto Godot 4.6 (Jolt Physics)
 ```
 

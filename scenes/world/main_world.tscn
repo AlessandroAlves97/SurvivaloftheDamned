@@ -1,10 +1,11 @@
-[gd_scene load_steps=23 format=3 uid="uid://d3x7n5m1q9v8w"]
+[gd_scene load_steps=24 format=3 uid="uid://d3x7n5m1q9v8w"]
 
 [ext_resource type="Script" path="res://scripts/world/ocean_environment.gd" id="1_ocean_env"]
 [ext_resource type="Shader" path="res://shaders/ocean.gdshader" id="2_ocean_shader"]
 [ext_resource type="PackedScene" uid="uid://b4m8n6k2w7r1p" path="res://scenes/structures/shipwreck_raft.tscn" id="3_raft_scene"]
 [ext_resource type="PackedScene" uid="uid://c8q2x4v9p1k3m" path="res://scenes/player/player.tscn" id="4_player_scene"]
 [ext_resource type="PackedScene" uid="uid://c6n3w8p2r4k9x" path="res://scenes/items/floating_wood.tscn" id="5_floating_wood"]
+[ext_resource type="Script" path="res://scripts/world/seafloor_generator.gd" id="6_seafloor_gen"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.18, 0.45, 0.78, 1)
@@ -113,6 +114,7 @@ mesh = SubResource("PlaneMesh_ocean")
 
 [node name="SeaFloor" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -26, 0)
+script = ExtResource("6_seafloor_gen")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SeaFloor"]
 mesh = SubResource("PlaneMesh_seafloor")

@@ -1,0 +1,125 @@
+[gd_scene load_steps=13 format=3 uid="uid://b9k4m2x7v5p1q"]
+
+[ext_resource type="Script" path="res://scripts/creatures/fish.gd" id="1_fish_script"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_pickup"]
+radius = 0.65
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.1, 0.58, 0.85, 1)
+metallic = 0.25
+roughness = 0.28
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_accent"]
+albedo_color = Color(0.98, 0.82, 0.18, 1)
+roughness = 0.35
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye_white"]
+albedo_color = Color(0.96, 0.96, 0.96, 1)
+roughness = 0.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye_pupil"]
+albedo_color = Color(0.04, 0.04, 0.06, 1)
+roughness = 0.1
+
+[sub_resource type="SphereMesh" id="SphereMesh_body"]
+material = SubResource("StandardMaterial3D_body")
+radius = 0.18
+height = 0.36
+radial_segments = 20
+rings = 10
+
+[sub_resource type="SphereMesh" id="SphereMesh_stripe"]
+material = SubResource("StandardMaterial3D_accent")
+radius = 0.184
+height = 0.368
+radial_segments = 16
+rings = 8
+
+[sub_resource type="BoxMesh" id="BoxMesh_dorsal"]
+material = SubResource("StandardMaterial3D_accent")
+size = Vector3(0.022, 0.14, 0.22)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pectoral"]
+material = SubResource("StandardMaterial3D_accent")
+size = Vector3(0.13, 0.018, 0.09)
+
+[sub_resource type="BoxMesh" id="BoxMesh_tail_lobe"]
+material = SubResource("StandardMaterial3D_accent")
+size = Vector3(0.02, 0.16, 0.18)
+
+[sub_resource type="SphereMesh" id="SphereMesh_eye"]
+material = SubResource("StandardMaterial3D_eye_white")
+radius = 0.026
+height = 0.052
+radial_segments = 12
+rings = 6
+
+[node name="Fish" type="StaticBody3D"]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_fish_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_pickup")
+
+[node name="Visuals" type="Node3D" parent="."]
+
+[node name="BodyMesh" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(0.52, 0, 0, 0, 0.78, 0, 0, 0, 1.55, 0, 0, 0)
+mesh = SubResource("SphereMesh_body")
+
+[node name="StripeMesh" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(0.54, 0, 0, 0, 0.8, 0, 0, 0, 0.42, 0, 0.01, -0.02)
+mesh = SubResource("SphereMesh_stripe")
+
+[node name="DorsalFin" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 0.14, 0.03)
+mesh = SubResource("BoxMesh_dorsal")
+
+[node name="VentralFin" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(0.85, 0, 0, 0, 0.7, -0.45, 0, 0.45, 0.7, 0, -0.12, 0.06)
+mesh = SubResource("BoxMesh_dorsal")
+
+[node name="LeftPectoralFin" type="Node3D" parent="Visuals"]
+transform = Transform3D(0.906308, 0, -0.422618, 0, 1, 0, 0.422618, 0, 0.906308, -0.08, -0.03, -0.06)
+
+[node name="Mesh" type="MeshInstance3D" parent="Visuals/LeftPectoralFin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.05, 0, 0.02)
+mesh = SubResource("BoxMesh_pectoral")
+
+[node name="RightPectoralFin" type="Node3D" parent="Visuals"]
+transform = Transform3D(0.906308, 0, 0.422618, 0, 1, 0, -0.422618, 0, 0.906308, 0.08, -0.03, -0.06)
+
+[node name="Mesh" type="MeshInstance3D" parent="Visuals/RightPectoralFin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.05, 0, 0.02)
+mesh = SubResource("BoxMesh_pectoral")
+
+[node name="LeftEye" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.068, 0.035, -0.16)
+mesh = SubResource("SphereMesh_eye")
+
+[node name="LeftPupil" type="MeshInstance3D" parent="Visuals/LeftEye"]
+transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, -0.012, 0, -0.006)
+material_override = SubResource("StandardMaterial3D_eye_pupil")
+mesh = SubResource("SphereMesh_eye")
+
+[node name="RightEye" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.068, 0.035, -0.16)
+mesh = SubResource("SphereMesh_eye")
+
+[node name="RightPupil" type="MeshInstance3D" parent="Visuals/RightEye"]
+transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, 0.012, 0, -0.006)
+material_override = SubResource("StandardMaterial3D_eye_pupil")
+mesh = SubResource("SphereMesh_eye")
+
+[node name="TailPivot" type="Node3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.24)
+
+[node name="TailUpper" type="MeshInstance3D" parent="Visuals/TailPivot"]
+transform = Transform3D(1, 0, 0, 0, 0.819152, -0.573576, 0, 0.573576, 0.819152, 0, 0.055, 0.085)
+mesh = SubResource("BoxMesh_tail_lobe")
+
+[node name="TailLower" type="MeshInstance3D" parent="Visuals/TailPivot"]
+transform = Transform3D(1, 0, 0, 0, 0.819152, 0.573576, 0, -0.573576, 0.819152, 0, -0.055, 0.085)
+mesh = SubResource("BoxMesh_tail_lobe")

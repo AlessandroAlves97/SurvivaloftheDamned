@@ -1,0 +1,288 @@
+[gd_scene load_steps=21 format=3 uid="uid://d8r3n5v7k2m4p"]
+
+[ext_resource type="Script" path="res://scripts/creatures/great_white_shark.gd" id="1_shark_script"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shark_dorsal"]
+albedo_color = Color(0.27, 0.32, 0.37, 1)
+roughness = 0.55
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shark_belly"]
+albedo_color = Color(0.88, 0.9, 0.92, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shark_dark"]
+albedo_color = Color(0.14, 0.17, 0.21, 1)
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shark_mouth"]
+albedo_color = Color(0.58, 0.18, 0.22, 1)
+roughness = 0.7
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shark_tooth"]
+albedo_color = Color(0.96, 0.96, 0.93, 1)
+roughness = 0.25
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shark_eye"]
+albedo_color = Color(0.03, 0.03, 0.04, 1)
+roughness = 0.1
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_torso_top"]
+material = SubResource("StandardMaterial3D_shark_dorsal")
+top_radius = 0.42
+bottom_radius = 0.54
+height = 2.15
+radial_segments = 7
+rings = 2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_torso_belly"]
+material = SubResource("StandardMaterial3D_shark_belly")
+top_radius = 0.38
+bottom_radius = 0.49
+height = 2.05
+radial_segments = 7
+rings = 2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_snout_upper"]
+material = SubResource("StandardMaterial3D_shark_dorsal")
+top_radius = 0.09
+bottom_radius = 0.44
+height = 1.15
+radial_segments = 6
+rings = 1
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_snout_under"]
+material = SubResource("StandardMaterial3D_shark_belly")
+top_radius = 0.12
+bottom_radius = 0.38
+height = 0.9
+radial_segments = 6
+rings = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_mouth_roof"]
+material = SubResource("StandardMaterial3D_shark_mouth")
+size = Vector3(0.42, 0.06, 0.58)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_lower_jaw"]
+material = SubResource("StandardMaterial3D_shark_belly")
+top_radius = 0.11
+bottom_radius = 0.32
+height = 0.78
+radial_segments = 6
+rings = 1
+
+[sub_resource type="PrismMesh" id="PrismMesh_tooth"]
+material = SubResource("StandardMaterial3D_shark_tooth")
+size = Vector3(0.045, 0.075, 0.035)
+
+[sub_resource type="SphereMesh" id="SphereMesh_eye"]
+material = SubResource("StandardMaterial3D_shark_eye")
+radius = 0.045
+height = 0.09
+radial_segments = 8
+rings = 4
+
+[sub_resource type="BoxMesh" id="BoxMesh_gill"]
+material = SubResource("StandardMaterial3D_shark_dark")
+size = Vector3(0.025, 0.26, 0.03)
+
+[sub_resource type="PrismMesh" id="PrismMesh_dorsal_fin"]
+material = SubResource("StandardMaterial3D_shark_dorsal")
+left_to_right = 0.15
+size = Vector3(0.09, 0.88, 0.92)
+
+[sub_resource type="PrismMesh" id="PrismMesh_pectoral_fin"]
+material = SubResource("StandardMaterial3D_shark_dorsal")
+left_to_right = 0.2
+size = Vector3(1.05, 0.07, 0.68)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tail_peduncle"]
+material = SubResource("StandardMaterial3D_shark_dorsal")
+top_radius = 0.41
+bottom_radius = 0.13
+height = 1.65
+radial_segments = 7
+rings = 2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tail_peduncle_belly"]
+material = SubResource("StandardMaterial3D_shark_belly")
+top_radius = 0.36
+bottom_radius = 0.11
+height = 1.55
+radial_segments = 7
+rings = 2
+
+[sub_resource type="PrismMesh" id="PrismMesh_caudal_lobe"]
+material = SubResource("StandardMaterial3D_shark_dorsal")
+left_to_right = 0.12
+size = Vector3(0.07, 0.96, 0.56)
+
+[node name="GreatWhiteShark" type="Node3D"]
+script = ExtResource("1_shark_script")
+
+[node name="Visuals" type="Node3D" parent="."]
+
+[node name="TorsoUpper" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(0.92, 0, 0, 0, 0, 1, 0, -0.82, 0, 0, 0.08, 0)
+mesh = SubResource("CylinderMesh_torso_top")
+
+[node name="TorsoBelly" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(0.88, 0, 0, 0, 0, 1, 0, -0.74, 0, 0, -0.11, -0.02)
+mesh = SubResource("CylinderMesh_torso_belly")
+
+[node name="DorsalFin" type="MeshInstance3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.68, -0.05)
+mesh = SubResource("PrismMesh_dorsal_fin")
+
+[node name="LeftPectoralPivot" type="Node3D" parent="Visuals"]
+transform = Transform3D(0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 0, 0, 1, -0.36, -0.18, -0.45)
+
+[node name="LeftPectoralFin" type="MeshInstance3D" parent="Visuals/LeftPectoralPivot"]
+transform = Transform3D(0.906308, 0, 0.422618, 0, 1, 0, -0.422618, 0, 0.906308, -0.42, 0, 0.12)
+mesh = SubResource("PrismMesh_pectoral_fin")
+
+[node name="RightPectoralPivot" type="Node3D" parent="Visuals"]
+transform = Transform3D(0.939693, -0.34202, 0, 0.34202, 0.939693, 0, 0, 0, 1, 0.36, -0.18, -0.45)
+
+[node name="RightPectoralFin" type="MeshInstance3D" parent="Visuals/RightPectoralPivot"]
+transform = Transform3D(0.906308, 0, -0.422618, 0, 1, 0, 0.422618, 0, 0.906308, 0.42, 0, 0.12)
+mesh = SubResource("PrismMesh_pectoral_fin")
+
+[node name="GillSlits" type="Node3D" parent="Visuals"]
+
+[node name="GillL1" type="MeshInstance3D" parent="Visuals/GillSlits"]
+transform = Transform3D(0.98, 0, -0.18, 0, 1, 0, 0.18, 0, 0.98, -0.43, 0.02, -0.68)
+mesh = SubResource("BoxMesh_gill")
+
+[node name="GillL2" type="MeshInstance3D" parent="Visuals/GillSlits"]
+transform = Transform3D(0.98, 0, -0.18, 0, 1, 0, 0.18, 0, 0.98, -0.45, 0.02, -0.58)
+mesh = SubResource("BoxMesh_gill")
+
+[node name="GillL3" type="MeshInstance3D" parent="Visuals/GillSlits"]
+transform = Transform3D(0.98, 0, -0.18, 0, 1, 0, 0.18, 0, 0.98, -0.46, 0.02, -0.48)
+mesh = SubResource("BoxMesh_gill")
+
+[node name="GillL4" type="MeshInstance3D" parent="Visuals/GillSlits"]
+transform = Transform3D(0.98, 0, -0.18, 0, 1, 0, 0.18, 0, 0.98, -0.47, 0.02, -0.38)
+mesh = SubResource("BoxMesh_gill")
+
+[node name="GillR1" type="MeshInstance3D" parent="Visuals/GillSlits"]
+transform = Transform3D(0.98, 0, 0.18, 0, 1, 0, -0.18, 0, 0.98, 0.43, 0.02, -0.68)
+mesh = SubResource("BoxMesh_gill")
+
+[node name="GillR2" type="MeshInstance3D" parent="Visuals/GillSlits"]
+transform = Transform3D(0.98, 0, 0.18, 0, 1, 0, -0.18, 0, 0.98, 0.45, 0.02, -0.58)
+mesh = SubResource("BoxMesh_gill")
+
+[node name="GillR3" type="MeshInstance3D" parent="Visuals/GillSlits"]
+transform = Transform3D(0.98, 0, 0.18, 0, 1, 0, -0.18, 0, 0.98, 0.46, 0.02, -0.48)
+mesh = SubResource("BoxMesh_gill")
+
+[node name="GillR4" type="MeshInstance3D" parent="Visuals/GillSlits"]
+transform = Transform3D(0.98, 0, 0.18, 0, 1, 0, -0.18, 0, 0.98, 0.47, 0.02, -0.38)
+mesh = SubResource("BoxMesh_gill")
+
+[node name="HeadGroup" type="Node3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, -1.02)
+
+[node name="SnoutUpper" type="MeshInstance3D" parent="Visuals/HeadGroup"]
+transform = Transform3D(0.92, 0, 0, 0, -0.052336, 0.99863, 0, -0.78, -0.04, 0, 0.06, -0.52)
+mesh = SubResource("CylinderMesh_snout_upper")
+
+[node name="SnoutUnder" type="MeshInstance3D" parent="Visuals/HeadGroup"]
+transform = Transform3D(0.86, 0, 0, 0, 0.0871557, 0.996195, 0, -0.55, 0.05, 0, -0.04, -0.42)
+mesh = SubResource("CylinderMesh_snout_under")
+
+[node name="MouthRoof" type="MeshInstance3D" parent="Visuals/HeadGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, -0.38)
+mesh = SubResource("BoxMesh_mouth_roof")
+
+[node name="LeftEye" type="MeshInstance3D" parent="Visuals/HeadGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.27, 0.11, -0.46)
+mesh = SubResource("SphereMesh_eye")
+
+[node name="RightEye" type="MeshInstance3D" parent="Visuals/HeadGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.27, 0.11, -0.46)
+mesh = SubResource("SphereMesh_eye")
+
+[node name="UpperTeeth" type="Node3D" parent="Visuals/HeadGroup"]
+transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, 1, 0, -0.11, -0.42)
+
+[node name="T1" type="MeshInstance3D" parent="Visuals/HeadGroup/UpperTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, 0, -0.12)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="T2" type="MeshInstance3D" parent="Visuals/HeadGroup/UpperTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.07, 0, -0.22)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="T3" type="MeshInstance3D" parent="Visuals/HeadGroup/UpperTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.26)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="T4" type="MeshInstance3D" parent="Visuals/HeadGroup/UpperTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 0, -0.22)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="T5" type="MeshInstance3D" parent="Visuals/HeadGroup/UpperTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, 0, -0.12)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="LowerJawPivot" type="Node3D" parent="Visuals/HeadGroup"]
+transform = Transform3D(1, 0, 0, 0, 0.990268, 0.139173, 0, -0.139173, 0.990268, 0, -0.14, -0.05)
+
+[node name="LowerJawMesh" type="MeshInstance3D" parent="Visuals/HeadGroup/LowerJawPivot"]
+transform = Transform3D(0.85, 0, 0, 0, 0.0871557, 0.996195, 0, -0.52, 0.05, 0, -0.03, -0.35)
+mesh = SubResource("CylinderMesh_lower_jaw")
+
+[node name="MouthFloor" type="MeshInstance3D" parent="Visuals/HeadGroup/LowerJawPivot"]
+transform = Transform3D(0.85, 0, 0, 0, 1, 0, 0, 0, 0.85, 0, 0.02, -0.32)
+mesh = SubResource("BoxMesh_mouth_roof")
+
+[node name="LowerTeeth" type="Node3D" parent="Visuals/HeadGroup/LowerJawPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, -0.36)
+
+[node name="LT1" type="MeshInstance3D" parent="Visuals/HeadGroup/LowerJawPivot/LowerTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12, 0, -0.08)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="LT2" type="MeshInstance3D" parent="Visuals/HeadGroup/LowerJawPivot/LowerTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.05, 0, -0.18)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="LT3" type="MeshInstance3D" parent="Visuals/HeadGroup/LowerJawPivot/LowerTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.05, 0, -0.18)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="LT4" type="MeshInstance3D" parent="Visuals/HeadGroup/LowerJawPivot/LowerTeeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, 0, -0.08)
+mesh = SubResource("PrismMesh_tooth")
+
+[node name="TailBodyPivot" type="Node3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0.98)
+
+[node name="PeduncleUpper" type="MeshInstance3D" parent="Visuals/TailBodyPivot"]
+transform = Transform3D(0.86, 0, 0, 0, 0, 1, 0, -0.82, 0, 0, 0.04, 0.78)
+mesh = SubResource("CylinderMesh_tail_peduncle")
+
+[node name="PeduncleBelly" type="MeshInstance3D" parent="Visuals/TailBodyPivot"]
+transform = Transform3D(0.82, 0, 0, 0, 0, 1, 0, -0.72, 0, 0, -0.08, 0.75)
+mesh = SubResource("CylinderMesh_tail_peduncle_belly")
+
+[node name="SecondDorsalFin" type="MeshInstance3D" parent="Visuals/TailBodyPivot"]
+transform = Transform3D(0.35, 0, 0, 0, 0.32, 0.12, 0, -0.12, 0.32, 0, 0.28, 1.05)
+mesh = SubResource("PrismMesh_dorsal_fin")
+
+[node name="AnalFin" type="MeshInstance3D" parent="Visuals/TailBodyPivot"]
+transform = Transform3D(0.35, 0, 0, 0, -0.32, 0.12, 0, -0.12, -0.32, 0, -0.26, 1.12)
+mesh = SubResource("PrismMesh_dorsal_fin")
+
+[node name="CaudalFinPivot" type="Node3D" parent="Visuals/TailBodyPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.56)
+
+[node name="UpperTailLobe" type="MeshInstance3D" parent="Visuals/TailBodyPivot/CaudalFinPivot"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 0.42, 0.26)
+mesh = SubResource("PrismMesh_caudal_lobe")
+
+[node name="LowerTailLobe" type="MeshInstance3D" parent="Visuals/TailBodyPivot/CaudalFinPivot"]
+transform = Transform3D(0.85, 0, 0, 0, -0.76, 0.48, 0, -0.48, -0.76, 0, -0.34, 0.22)
+mesh = SubResource("PrismMesh_caudal_lobe")

@@ -3,10 +3,12 @@ extends CharacterBody3D
 const STORAGE_CHEST_SCENE := preload("res://scenes/structures/storage_chest.tscn")
 const PADDLE_COST_WOOD: int = 4
 const CHEST_COST_WOOD: int = 6
+const FISH_HUNGER_RESTORE: float = 30.0
 const HOTBAR_SIZE: int = 6
 
 const ITEM_NAMES: Dictionary = {
 	"wood": "Madeira",
+	"fish": "Peixe",
 	"paddle": "Remo",
 	"chest": "Baú"
 }
@@ -15,6 +17,7 @@ const ITEM_NAMES: Dictionary = {
 ## (Estruturas pesadas/grandes como o "chest" ficam false e usam preview de posicionamento)
 const ITEM_HOLDABLE: Dictionary = {
 	"wood": true,
+	"fish": true,
 	"paddle": true,
 	"chest": false
 }
@@ -48,17 +51,19 @@ const ITEM_HOLDABLE: Dictionary = {
 
 var health: float = 100.0
 var oxygen: float = 45.0
-var hunger: float = 100.0
+var hunger: float = 75.0
 var thirst: float = 100.0
 
 ## Sistema de Inventário e HotBar (Slots 0 a 5 -> Teclas 1 a 6)
 var inventory: Dictionary = {
 	"wood": 0,
+	"fish": 0,
 	"paddle": 0,
 	"chest": 0
 }
 var hotbar: Array[String] = ["", "", "", "", "", ""]
 var selected_hotbar_slot: int = 0
+var held_fish: Node3D = null
 
 var _is_rowing: bool = false
 var _row_cycle: float = 0.0
@@ -72,11 +77,21 @@ var _chest_preview_local_pos: Vector3 = Vector3.ZERO
 
 var is_swimming: bool = false
 var is_head_underwater: bool = false
+var is_dead: bool = false
+var last_death_reason: String = ""
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
 var _current_interactable: Node = null
 var _active_chest: Node = null
 var _feedback_timer: float = 0.0
+var _damage_flash_alpha: float = 0.0
+var _poison_timer: float = 0.0
+var _urchin_check_timer: float = 0.0
+var _death_pulse_cycle: float = 0.0
+var _damage_overlay: ColorRect = null
+var _death_screen: ColorRect = null
+var _death_reason_label: Label = null
+var _death_prompt_label: Label = null
 var _hotbar_slot_panels: Array[PanelContainer] = []
 var _hotbar_slot_labels: Array[Label] = []
 
@@ -131,11 +146,143 @@ var _hotbar_slot_labels: Array[Label] = []
 func _ready() -> void:
 	add_to_group("player")
 	_ensure_input_actions()
+	_build_held_fish_model()
 	_build_hotbar_ui()
+	_build_death_screen_ui()
 	_connect_ui_signals()
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_refresh_hotbar_ui()
 	_update_hud()
+
+
+func _build_death_screen_ui() -> void:
+	var hud_node := get_node_or_null("HUD") as CanvasLayer
+	if not hud_node:
+		return
+
+	# Flash vermelho de dano (mordida de tubarão, veneno, sufocamento)
+	_damage_overlay = ColorRect.new()
+	_damage_overlay.name = "DamageOverlay"
+	_damage_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_damage_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_damage_overlay.color = Color(0.82, 0.04, 0.04, 0.0)
+	hud_node.add_child(_damage_overlay)
+
+	# Tela de Morte (Death Screen) em tela cheia
+	_death_screen = ColorRect.new()
+	_death_screen.name = "DeathScreen"
+	_death_screen.visible = false
+	_death_screen.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_death_screen.color = Color(0.06, 0.01, 0.02, 0.90)
+	hud_node.add_child(_death_screen)
+
+	var center_box := CenterContainer.new()
+	center_box.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_death_screen.add_child(center_box)
+
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(560, 290)
+	var card_style := StyleBoxFlat.new()
+	card_style.bg_color = Color(0.11, 0.03, 0.04, 0.96)
+	card_style.border_width_left = 2
+	card_style.border_width_top = 2
+	card_style.border_width_right = 2
+	card_style.border_width_bottom = 2
+	card_style.border_color = Color(0.85, 0.18, 0.18, 0.9)
+	card_style.corner_radius_top_left = 10
+	card_style.corner_radius_top_right = 10
+	card_style.corner_radius_bottom_right = 10
+	card_style.corner_radius_bottom_left = 10
+	card.add_theme_stylebox_override("panel", card_style)
+	center_box.add_child(card)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 32)
+	margin.add_theme_constant_override("margin_top", 28)
+	margin.add_theme_constant_override("margin_right", 32)
+	margin.add_theme_constant_override("margin_bottom", 28)
+	card.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 18)
+	margin.add_child(vbox)
+
+	var title_lbl := Label.new()
+	title_lbl.text = "VOCÊ MORREU"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.add_theme_font_size_override("font_size", 38)
+	title_lbl.add_theme_color_override("font_color", Color(0.98, 0.22, 0.22, 1.0))
+	title_lbl.add_theme_constant_override("outline_size", 6)
+	title_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	vbox.add_child(title_lbl)
+
+	_death_reason_label = Label.new()
+	_death_reason_label.text = "Causa da morte: Desconhecida"
+	_death_reason_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_death_reason_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_death_reason_label.add_theme_font_size_override("font_size", 20)
+	_death_reason_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55, 1.0))
+	vbox.add_child(_death_reason_label)
+
+	var penalty_lbl := Label.new()
+	penalty_lbl.text = "Todo o seu inventário foi perdido nas profundezas do oceano."
+	penalty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	penalty_lbl.add_theme_font_size_override("font_size", 15)
+	penalty_lbl.add_theme_color_override("font_color", Color(0.78, 0.78, 0.82, 0.9))
+	vbox.add_child(penalty_lbl)
+
+	_death_prompt_label = Label.new()
+	_death_prompt_label.text = "Pressione [ESPAÇO] para renascer"
+	_death_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_death_prompt_label.add_theme_font_size_override("font_size", 22)
+	_death_prompt_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0, 1.0))
+	_death_prompt_label.add_theme_constant_override("outline_size", 4)
+	_death_prompt_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	vbox.add_child(_death_prompt_label)
+
+
+func _build_held_fish_model() -> void:
+	if not right_hand:
+		return
+	held_fish = Node3D.new()
+	held_fish.name = "HeldFish"
+	held_fish.visible = false
+	right_hand.add_child(held_fish)
+
+	var body_mat := StandardMaterial3D.new()
+	body_mat.albedo_color = Color(0.12, 0.58, 0.86)
+	body_mat.metallic = 0.25
+	body_mat.roughness = 0.28
+
+	var fin_mat := StandardMaterial3D.new()
+	fin_mat.albedo_color = Color(0.98, 0.80, 0.18)
+	fin_mat.roughness = 0.35
+
+	var body := MeshInstance3D.new()
+	var sph := SphereMesh.new()
+	sph.radius = 0.08
+	sph.height = 0.16
+	sph.material = body_mat
+	body.mesh = sph
+	body.scale = Vector3(0.55, 0.85, 1.65)
+	held_fish.add_child(body)
+
+	var dorsal := MeshInstance3D.new()
+	var d_box := BoxMesh.new()
+	d_box.size = Vector3(0.014, 0.065, 0.11)
+	d_box.material = fin_mat
+	dorsal.mesh = d_box
+	dorsal.position = Vector3(0.0, 0.065, 0.01)
+	held_fish.add_child(dorsal)
+
+	var tail := MeshInstance3D.new()
+	var t_box := BoxMesh.new()
+	t_box.size = Vector3(0.014, 0.11, 0.09)
+	t_box.material = fin_mat
+	tail.mesh = t_box
+	tail.position = Vector3(0.0, 0.0, 0.14)
+	held_fish.add_child(tail)
 
 
 func _build_hotbar_ui() -> void:
@@ -202,6 +349,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if get_tree().paused:
 		return
 
+	if is_dead:
+		if event.is_action_pressed("jump"):
+			_respawn_player()
+			get_viewport().set_input_as_handled()
+		return
+
 	if event.is_action_pressed("toggle_inventory"):
 		if chest_menu.visible or inventory_menu.visible:
 			_close_all_submenus()
@@ -229,12 +382,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _current_interactable and _current_interactable.has_method("interact"):
 			_current_interactable.interact(self)
 
+	elif event.is_action_pressed("eat_item"):
+		if _get_equipped_item() == "fish":
+			eat_fish()
+
 	elif event is InputEventMouseButton and event.pressed:
 		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		elif event.button_index == MOUSE_BUTTON_LEFT:
-			if _get_equipped_item() == "chest":
+			var eq: String = _get_equipped_item()
+			if eq == "chest":
 				_try_place_equipped_chest()
+			elif eq == "fish":
+				eat_fish()
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			if _get_equipped_item() == "fish":
+				eat_fish()
 
 
 func _process(delta: float) -> void:
@@ -243,7 +406,19 @@ func _process(delta: float) -> void:
 		if _feedback_timer <= 0.0 and feedback_label:
 			feedback_label.text = ""
 
+	if _damage_flash_alpha > 0.0:
+		_damage_flash_alpha = move_toward(_damage_flash_alpha, 0.0, delta * 1.4)
+		if _damage_overlay:
+			_damage_overlay.color = Color(0.82, 0.04, 0.04, _damage_flash_alpha)
+
 	if get_tree().paused:
+		return
+
+	if is_dead:
+		_death_pulse_cycle = wrapf(_death_pulse_cycle + delta * 3.2, 0.0, TAU)
+		if _death_prompt_label:
+			var pulse: float = 0.65 + (sin(_death_pulse_cycle) * 0.5 + 0.5) * 0.35
+			_death_prompt_label.modulate = Color(1.0, 1.0, 1.0, pulse)
 		return
 
 	_update_chest_placement_preview()
@@ -252,7 +427,7 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if get_tree().paused:
+	if get_tree().paused or is_dead:
 		return
 
 	var chest_y: float = global_position.y + 0.9
@@ -369,6 +544,7 @@ func _animate_first_person_hands(delta: float) -> void:
 	# Atualiza visibilidade dos itens leves seguráveis nas mãos
 	var show_paddle: bool = (active_hand_item == "paddle") and not is_swimming
 	var show_wood: bool = (active_hand_item == "wood")
+	var show_fish: bool = (active_hand_item == "fish")
 
 	if paddle_holder:
 		paddle_holder.visible = show_paddle
@@ -379,6 +555,11 @@ func _animate_first_person_hands(delta: float) -> void:
 			# ficando claramente visível na tela em uma pegada humana natural
 			held_wood.position = Vector3(-0.025, 0.045, -0.055)
 			held_wood.rotation_degrees = Vector3(46.0, 14.0, 22.0)
+	if held_fish:
+		held_fish.visible = show_fish
+		if show_fish:
+			held_fish.position = Vector3(-0.02, 0.04, -0.065)
+			held_fish.rotation_degrees = Vector3(18.0, 28.0, -12.0)
 
 	# Animação do Remo (quando visível)
 	if show_paddle and paddle_holder:
@@ -440,8 +621,8 @@ func _animate_first_person_hands(delta: float) -> void:
 			left_hand_rot = Vector3(-8.0 * sweep_wide, -10.0, 18.0 * sweep_wide)
 			left_finger_curl = 4.0
 
-			if show_wood:
-				# Se estiver segurando madeira durante o nado, mão direita mantém a madeira firme junto ao corpo
+			if show_wood or show_fish:
+				# Se estiver segurando madeira ou peixe durante o nado, mão direita mantém o item firme junto ao corpo
 				right_target_pos = Vector3(0.24, -0.22 + vertical_wave * 0.015 + dip_offset, -0.27)
 				right_target_rot = Vector3(26.0, 44.0, -18.0)
 				right_hand_rot = Vector3(10.0, 12.0, -18.0)
@@ -461,7 +642,7 @@ func _animate_first_person_hands(delta: float) -> void:
 			left_hand_rot = Vector3(4.0, -8.0, 16.0 * scull_c)
 			left_finger_curl = -4.0
 
-			if show_wood:
+			if show_wood or show_fish:
 				right_target_pos = Vector3(0.24, -0.21 + scull_c * 0.01 + dip_offset, -0.27)
 				right_target_rot = Vector3(28.0, 44.0, -18.0)
 				right_hand_rot = Vector3(10.0, 12.0, -18.0)
@@ -497,9 +678,9 @@ func _animate_first_person_hands(delta: float) -> void:
 			left_target_rot = Vector3(24.0 + row_s * 14.0, -54.0 + row_c * 6.0, 20.0)
 			left_hand_rot = Vector3(6.0, -12.0, 18.0)
 			left_finger_curl = -46.0
-		elif show_wood:
-			# Mão direita traz a tábua de madeira para uma posição visível e ergonômica à frente/direita;
-			# dedos fecham ao redor da madeira e mão esquerda acompanha relaxada no canto inferior
+		elif show_wood or show_fish:
+			# Mão direita traz a tábua de madeira ou o peixe para uma posição visível e ergonômica à frente/direita;
+			# dedos fecham ao redor do item e mão esquerda acompanha relaxada no canto inferior
 			right_target_pos = Vector3(0.24 + bob_c * 0.01, -0.21 + absf(bob_s) * 0.014 + idle_y + dip_offset, -0.27 - bob_s * 0.012)
 			right_target_rot = Vector3(28.0 + bob_s * 3.5, 44.0, -18.0)
 			right_hand_rot = Vector3(10.0, 12.0, -18.0)
@@ -634,15 +815,16 @@ func _update_interaction_target() -> void:
 		if col is Node and col.is_in_group("interactable"):
 			_current_interactable = col as Node
 
-	# Fallback de proximidade para facilitar pegar madeiras oscilando nas ondas
+	# Fallback de proximidade para facilitar pegar madeiras nas ondas e peixes em movimento
 	if not _current_interactable:
 		var cam_pos: Vector3 = camera.global_position
 		var cam_forward: Vector3 = -camera.global_transform.basis.z
-		var best_score: float = 0.65
+		var best_score: float = 0.62
 		for item in get_tree().get_nodes_in_group("interactable"):
 			if item is Node3D:
+				var max_dist: float = 3.8 if item.is_in_group("fish") else 3.4
 				var dist: float = cam_pos.distance_to(item.global_position)
-				if dist <= 3.4:
+				if dist <= max_dist:
 					var dir_to: Vector3 = (item.global_position - cam_pos).normalized()
 					var dot_val: float = cam_forward.dot(dir_to)
 					if dot_val > best_score:
@@ -651,6 +833,8 @@ func _update_interaction_target() -> void:
 
 	if _current_interactable and _current_interactable.has_method("get_interaction_prompt"):
 		interaction_label.text = _current_interactable.get_interaction_prompt()
+	elif _get_equipped_item() == "fish":
+		interaction_label.text = "[Clique Esquerdo / F] Comer Peixe (+%d%% Fome)" % int(FISH_HUNGER_RESTORE)
 	else:
 		interaction_label.text = ""
 
@@ -662,6 +846,23 @@ func _update_interaction_target() -> void:
 func add_wood(amount: int) -> void:
 	# Sem exibir mensagem de total coletado na tela, conforme solicitado
 	_add_item("wood", amount)
+
+
+func add_fish(amount: int) -> void:
+	_add_item("fish", amount)
+	_show_feedback("Peixe coletado! Equipe na HotBar e clique para comer.")
+
+
+func eat_fish() -> void:
+	if int(inventory.get("fish", 0)) <= 0:
+		return
+	_remove_item("fish", 1)
+	hunger = minf(max_hunger, hunger + FISH_HUNGER_RESTORE)
+	thirst = minf(max_thirst, thirst + 5.0)
+	health = minf(max_health, health + 5.0)
+	_equip_dip = 1.0
+	_update_hud()
+	_show_feedback("Você comeu um Peixe fresco! (+%d%% Fome saciada)" % int(FISH_HUNGER_RESTORE))
 
 
 func _add_item(item_id: String, amount: int) -> void:
@@ -786,7 +987,7 @@ func _refresh_inventory_ui() -> void:
 		child.queue_free()
 
 	var any_item := false
-	for item_id: String in ["wood", "paddle", "chest"]:
+	for item_id: String in ["wood", "fish", "paddle", "chest"]:
 		var count: int = int(inventory.get(item_id, 0))
 		if count <= 0:
 			continue
@@ -802,6 +1003,13 @@ func _refresh_inventory_ui() -> void:
 		var slot_tag: String = " (HotBar [%d])" % (slot_idx + 1) if slot_idx != -1 else ""
 		name_lbl.text = "• %s  (Qtd: %d)%s" % [display_name, count, slot_tag]
 		row.add_child(name_lbl)
+
+		if item_id == "fish":
+			var eat_btn := Button.new()
+			eat_btn.custom_minimum_size = Vector2(125, 32)
+			eat_btn.text = "Comer (+%d%%)" % int(FISH_HUNGER_RESTORE)
+			eat_btn.pressed.connect(func(): eat_fish())
+			row.add_child(eat_btn)
 
 		var eq_btn := Button.new()
 		eq_btn.custom_minimum_size = Vector2(145, 32)
@@ -956,7 +1164,7 @@ func _quit_game() -> void:
 
 
 func _is_any_menu_open() -> bool:
-	return pause_menu.visible or inventory_menu.visible or chest_menu.visible
+	return pause_menu.visible or inventory_menu.visible or chest_menu.visible or is_dead
 
 
 func _show_feedback(msg: String) -> void:
@@ -965,18 +1173,140 @@ func _show_feedback(msg: String) -> void:
 		_feedback_timer = 3.2
 
 
+func take_damage(amount: float, reason: String, knockback: Vector3 = Vector3.ZERO) -> void:
+	if is_dead or amount <= 0.0:
+		return
+	health = maxf(0.0, health - amount)
+	last_death_reason = reason
+	_damage_flash_alpha = 0.68
+	if _damage_overlay:
+		_damage_overlay.color = Color(0.82, 0.04, 0.04, _damage_flash_alpha)
+	if knockback != Vector3.ZERO:
+		velocity += knockback
+	_show_feedback("Perigo: %s (-%d%% Vida)" % [reason, int(round(amount))])
+	_update_hud()
+	if health <= 0.0:
+		_trigger_death(reason)
+
+
+func _trigger_death(reason: String) -> void:
+	if is_dead:
+		return
+	is_dead = true
+	health = 0.0
+	last_death_reason = reason if reason != "" else "Causa desconhecida"
+	velocity = Vector3.ZERO
+	_is_rowing = false
+	_close_all_submenus()
+	if chest_preview:
+		chest_preview.visible = false
+	if interaction_label:
+		interaction_label.text = ""
+	if feedback_label:
+		feedback_label.text = ""
+	if _death_reason_label:
+		_death_reason_label.text = "Causa da morte: %s" % last_death_reason
+	if _death_screen:
+		_death_screen.visible = true
+	_update_hud()
+
+
+func _respawn_player() -> void:
+	if not is_dead:
+		return
+	is_dead = false
+	_poison_timer = 0.0
+	_damage_flash_alpha = 0.0
+	if _damage_overlay:
+		_damage_overlay.color = Color(0.82, 0.04, 0.04, 0.0)
+	if _death_screen:
+		_death_screen.visible = false
+
+	# Perde TODO o inventário e limpa todos os slots da HotBar ao morrer
+	for key in inventory.keys():
+		inventory[key] = 0
+	for i in range(HOTBAR_SIZE):
+		hotbar[i] = ""
+	selected_hotbar_slot = 0
+
+	# Restaura os status vitais
+	health = max_health
+	oxygen = max_oxygen
+	hunger = 80.0
+	thirst = max_thirst
+
+	# Reposiciona o jogador no spawn em cima da jangada (ShipwreckRaft)
+	var raft := get_tree().get_first_node_in_group("raft") as Node3D
+	if raft:
+		global_position = raft.global_position + Vector3(0.0, 0.45, 0.6)
+		rotation = Vector3(0.0, raft.rotation.y, 0.0)
+	else:
+		global_position = Vector3(0.0, 0.45, 0.6)
+		rotation = Vector3.ZERO
+
+	if head:
+		head.rotation = Vector3.ZERO
+	velocity = Vector3.ZERO
+	is_swimming = false
+	is_head_underwater = false
+	if underwater_overlay:
+		underwater_overlay.visible = false
+
+	# Faz os tubarões voltarem para a patrulha profunda após o renascimento
+	for s in get_tree().get_nodes_in_group("shark"):
+		if s.has_method("reset_to_deep_patrol"):
+			s.call("reset_to_deep_patrol")
+
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	_refresh_hotbar_ui()
+	_refresh_inventory_ui()
+	_update_hud()
+	_show_feedback("Você renasceu na jangada. Todo o seu inventário foi perdido.")
+
+
 func _process_survival(delta: float) -> void:
+	if is_dead:
+		return
+
 	if is_head_underwater:
 		oxygen = maxf(0.0, oxygen - delta)
 		if oxygen <= 0.0:
-			health = maxf(0.0, health - 5.0 * delta)
+			last_death_reason = "Sufocamento (Falta de Oxigênio embaixo d'água)"
+			health = maxf(0.0, health - 7.5 * delta)
+			_damage_flash_alpha = maxf(_damage_flash_alpha, 0.28)
 	else:
 		oxygen = minf(max_oxygen, oxygen + delta * 15.0)
 
-	hunger = maxf(0.0, hunger - delta * 0.08)
+	# Verifica contato com ouriços-do-mar venenosos no fundo do mar
+	if is_swimming:
+		_urchin_check_timer += delta
+		if _urchin_check_timer >= 0.35:
+			_urchin_check_timer = 0.0
+			for u in get_tree().get_nodes_in_group("venomous_urchin"):
+				if u is Node3D and global_position.distance_to(u.global_position) < 0.95:
+					if _poison_timer <= 0.0:
+						_show_feedback("Envenenado por Ouriço-do-Mar!")
+					_poison_timer = 6.0
+					_damage_flash_alpha = maxf(_damage_flash_alpha, 0.45)
+					break
+
+	if _poison_timer > 0.0:
+		_poison_timer = maxf(0.0, _poison_timer - delta)
+		last_death_reason = "Envenenamento (Toxina de Ouriço-do-Mar)"
+		health = maxf(0.0, health - 4.5 * delta)
+
+	hunger = maxf(0.0, hunger - delta * 0.14)
 	thirst = maxf(0.0, thirst - delta * 0.12)
+	if hunger <= 0.0:
+		last_death_reason = "Inanição (Morreu de Fome)"
+		health = maxf(0.0, health - 2.0 * delta)
+	if thirst <= 0.0:
+		last_death_reason = "Desidratação (Morreu de Sede)"
+		health = maxf(0.0, health - 2.2 * delta)
 
 	_update_hud()
+	if health <= 0.0 and not is_dead:
+		_trigger_death(last_death_reason)
 
 
 func _update_hud() -> void:
@@ -990,6 +1320,8 @@ func _update_hud() -> void:
 		item_hint = "  |  Segure [Clique Esq.] Remar"
 	elif equipped == "chest":
 		item_hint = "  |  [Clique Esq.] Posicionar Baú"
+	elif equipped == "fish":
+		item_hint = "  |  [Clique Esq. / F] Comer Peixe (+%d%% Fome)" % int(FISH_HUNGER_RESTORE)
 
 	mode_label.text = "Estado: %s  |  [E] Interagir  |  [Tab/I] Inventário & Craft  |  [1-6] HotBar%s" % [state_text, item_hint]
 
@@ -1012,6 +1344,7 @@ func _ensure_input_actions() -> void:
 		"sprint": [KEY_SHIFT],
 		"crouch": [KEY_CTRL, KEY_C],
 		"interact": [KEY_E],
+		"eat_item": [KEY_F],
 		"toggle_inventory": [KEY_TAB, KEY_I, KEY_B],
 		"hotbar_1": [KEY_1, KEY_KP_1],
 		"hotbar_2": [KEY_2, KEY_KP_2],
